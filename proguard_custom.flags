@@ -1,0 +1,10 @@
+-include ../base/packages/SystemUI/proguard_kotlin.flags
+
+-keepattributes Signature
+-keepclassmembers class com.android.systemui.clocks.custom.R$* { public static <fields>; }
+
+-keep !enum androidx.compose.**Scope { *; }
+-keep !enum androidx.compose.runtime.** {
+    *** startRestartGroup(...);
+    *** getApplier(...);
+}
