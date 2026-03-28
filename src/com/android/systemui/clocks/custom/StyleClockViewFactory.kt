@@ -53,12 +53,12 @@ private class OxygenStyleClockView(
 ) : StyleClockView {
     override val root = FrameLayout(context)
     override val largeOffsetX: Float = 0f
-    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(338f) else 0f
+    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(428f) else 0f
 
     private val dateView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(20f) else context.dpF(13f),
+            sizePx = if (isLargeClock) context.dpF(15f) else context.dpF(12f),
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
             letterSpacing = 0f,
         ).apply {
@@ -69,9 +69,9 @@ private class OxygenStyleClockView(
     private val timeView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(118f) else context.dpF(62f),
+            sizePx = if (isLargeClock) context.dpF(136f) else context.dpF(74f),
             typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
-            letterSpacing = -0.025f,
+            letterSpacing = -0.04f,
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding(0, context.dp(4), 0, 0)
@@ -117,12 +117,12 @@ private class OxygenStyleClockView(
     override fun applyFontSize(fontSizePx: Float) {
         val core =
             if (isLargeClock) {
-                (fontSizePx * 1.2f).coerceAtLeast(context.dpF(84f))
+                (fontSizePx * 1.35f).coerceAtLeast(context.dpF(104f))
             } else {
-                (fontSizePx * 0.76f).coerceAtLeast(context.dpF(36f))
+                (fontSizePx * 0.9f).coerceAtLeast(context.dpF(44f))
             }
         timeView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
-        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.2f)
+        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.14f)
     }
 }
 
@@ -132,12 +132,12 @@ private class IOS26StyleClockView(
 ) : StyleClockView {
     override val root = FrameLayout(context)
     override val largeOffsetX: Float = 0f
-    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(324f) else 0f
+    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(412f) else 0f
 
     private val dateView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(21f) else context.dpF(13f),
+            sizePx = if (isLargeClock) context.dpF(19f) else context.dpF(12f),
             typeface = Typeface.create("sans-serif", Typeface.NORMAL),
             letterSpacing = 0f,
         ).apply {
@@ -148,9 +148,9 @@ private class IOS26StyleClockView(
     private val timeView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(92f) else context.dpF(52f),
+            sizePx = if (isLargeClock) context.dpF(104f) else context.dpF(58f),
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
-            letterSpacing = -0.01f,
+            letterSpacing = -0.02f,
         ).apply {
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding(0, context.dp(2), 0, 0)
@@ -196,12 +196,12 @@ private class IOS26StyleClockView(
     override fun applyFontSize(fontSizePx: Float) {
         val core =
             if (isLargeClock) {
-                (fontSizePx * 1.04f).coerceAtLeast(context.dpF(68f))
+                (fontSizePx * 1.18f).coerceAtLeast(context.dpF(86f))
             } else {
-                (fontSizePx * 0.72f).coerceAtLeast(context.dpF(34f))
+                (fontSizePx * 0.82f).coerceAtLeast(context.dpF(44f))
             }
         timeView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
-        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.23f)
+        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.18f)
     }
 }
 
@@ -210,25 +210,25 @@ private class OneUI8StyleClockView(
     private val isLargeClock: Boolean,
 ) : StyleClockView {
     override val root = FrameLayout(context)
-    override val largeOffsetX: Float = 0f
-    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(304f) else 0f
+    override val largeOffsetX: Float = if (isLargeClock) -context.dpF(108f) else 0f
+    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(396f) else 0f
 
     private val timeView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(74f) else context.dpF(46f),
-            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+            sizePx = if (isLargeClock) context.dpF(82f) else context.dpF(50f),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
             letterSpacing = 0f,
-        ).apply { gravity = Gravity.CENTER_HORIZONTAL }
+        ).apply { gravity = Gravity.START }
 
     private val dateView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(20f) else context.dpF(13f),
+            sizePx = if (isLargeClock) context.dpF(22f) else context.dpF(13f),
             typeface = Typeface.create("sans-serif", Typeface.NORMAL),
             letterSpacing = 0f,
         ).apply {
-            gravity = Gravity.CENTER_HORIZONTAL
+            gravity = Gravity.START
             alpha = 0.96f
             setPadding(0, context.dp(2), 0, 0)
         }
@@ -241,7 +241,7 @@ private class OneUI8StyleClockView(
         val col =
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
+                gravity = Gravity.START
                 clipChildren = false
                 clipToPadding = false
             }
@@ -254,7 +254,7 @@ private class OneUI8StyleClockView(
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER_HORIZONTAL,
+                Gravity.START,
             ),
         )
     }
@@ -274,12 +274,12 @@ private class OneUI8StyleClockView(
     override fun applyFontSize(fontSizePx: Float) {
         val core =
             if (isLargeClock) {
-                (fontSizePx * 0.92f).coerceAtLeast(context.dpF(54f))
+                (fontSizePx * 0.96f).coerceAtLeast(context.dpF(64f))
             } else {
-                (fontSizePx * 0.65f).coerceAtLeast(context.dpF(30f))
+                (fontSizePx * 0.72f).coerceAtLeast(context.dpF(36f))
             }
         timeView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
-        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.29f)
+        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.26f)
     }
 }
 
