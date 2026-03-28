@@ -17,6 +17,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.text.format.DateFormat
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -27,6 +28,8 @@ import kotlin.math.roundToInt
 
 internal interface StyleClockView {
     val root: View
+    val largeOffsetX: Float
+    val largeOffsetY: Float
 
     fun render(hour: String, minute: String, full: String, contentDescription: String?)
 
@@ -45,330 +48,250 @@ internal object ClockStyleViewFactory {
     }
 }
 
-private class OxygenStyleClockView(context: Context, private val isLargeClock: Boolean) : StyleClockView {
-    private val rootFrame = FrameLayout(context)
-    private val bubbleBackground = GradientDrawable()
+private class OxygenStyleClockView(
+    private val context: Context,
+    private val isLargeClock: Boolean,
+) : StyleClockView {
+    override val root = FrameLayout(context)
+    override val largeOffsetX: Float = if (isLargeClock) -context.dpF(112f) else 0f
+    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(206f) else 0f
 
-    private var hourView: TextView? = null
-    private var minuteView: TextView? = null
+    private val panelBackground = glassPanel(context, 24f)
 
-    override val root: View = rootFrame
+    private val hourView =
+        buildText(
+            context = context,
+            sizePx = if (isLargeClock) context.dpF(90f) else context.dpF(54f),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+            letterSpacing = -0.01f,
+        )
+
+    private val minuteView =
+        buildText(
+            context = context,
+            sizePx = if (isLargeClock) context.dpF(90f) else context.dpF(54f),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+            letterSpacing = -0.01f,
+        )
+
+    private val dateView =
+        buildText(
+            context = context,
+            sizePx = if (isLargeClock) context.dpF(20f) else context.dpF(13f),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+            letterSpacing = 0f,
+        ).apply {
+            gravity = Gravity.START
+            setPadding(0, context.dp(4), 0, 0)
+        }
 
     init {
-        if (isLargeClock) {
-            val stack =
-                LinearLayout(context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    gravity = Gravity.CENTER_HORIZONTAL
-                }
-
-            hourView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(120f),
-                    typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
-                    letterSpacing = -0.03f,
+        val panel =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.START
+                setPadding(
+                    if (isLargeClock) context.dp(18) else context.dp(12),
+                    if (isLargeClock) context.dp(14) else context.dp(10),
+                    if (isLargeClock) context.dp(18) else context.dp(12),
+                    if (isLargeClock) context.dp(14) else context.dp(10),
                 )
+                background = panelBackground
+            }
 
-            minuteView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(120f),
-                    typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
-                    letterSpacing = -0.03f,
-                )
+        panel.addView(hourView)
+        panel.addView(minuteView)
+        panel.addView(dateView)
 
-            stack.addView(hourView)
-            stack.addView(minuteView)
-            rootFrame.addView(
-                stack,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-        } else {
-            val bubble =
-                LinearLayout(context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    gravity = Gravity.CENTER
-                    setPadding(context.dp(14), context.dp(9), context.dp(14), context.dp(9))
-                    background = bubbleBackground
-                }
-
-            hourView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(26f),
-                    typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
-                    letterSpacing = -0.02f,
-                )
-
-            minuteView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(26f),
-                    typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
-                    letterSpacing = -0.02f,
-                )
-
-            bubble.addView(hourView)
-            bubble.addView(minuteView)
-            rootFrame.addView(
-                bubble,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-        }
+        root.addView(
+            panel,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.START,
+            ),
+        )
     }
 
     override fun render(hour: String, minute: String, full: String, contentDescription: String?) {
-        hourView?.text = hour
-        minuteView?.text = minute
-
+        hourView.text = hour
+        minuteView.text = minute
+        dateView.text = nowDateLabel()
         root.contentDescription = contentDescription ?: full
         root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     override fun applyColor(color: Int) {
-        hourView?.setTextColor(color)
-        minuteView?.setTextColor(color)
-
-        if (!isLargeClock) {
-            bubbleBackground.shape = GradientDrawable.RECTANGLE
-            bubbleBackground.cornerRadius = root.context.dpF(20f)
-            bubbleBackground.setColor(withAlpha(color, 0.23f))
-        }
+        hourView.setTextColor(color)
+        minuteView.setTextColor(color)
+        dateView.setTextColor(color)
+        panelBackground.setColor(withAlpha(color, 0.20f))
+        panelBackground.setStroke(context.dp(1), withAlpha(color, 0.32f))
     }
 
     override fun applyFontSize(fontSizePx: Float) {
-        if (isLargeClock) {
-            val size = (fontSizePx * 1.45f).coerceAtLeast(root.context.dpF(82f))
-            hourView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
-            minuteView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
-        } else {
-            val size = (fontSizePx * 0.62f).coerceAtLeast(root.context.dpF(22f))
-            hourView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
-            minuteView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
-        }
+        val core =
+            if (isLargeClock) {
+                (fontSizePx * 1.16f).coerceAtLeast(context.dpF(70f))
+            } else {
+                (fontSizePx * 0.72f).coerceAtLeast(context.dpF(36f))
+            }
+        hourView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
+        minuteView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
+        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.24f)
     }
 }
 
-private class IOS26StyleClockView(context: Context, private val isLargeClock: Boolean) : StyleClockView {
-    private val rootFrame = FrameLayout(context)
-    private val chipBackground = GradientDrawable()
+private class IOS26StyleClockView(
+    private val context: Context,
+    private val isLargeClock: Boolean,
+) : StyleClockView {
+    override val root = FrameLayout(context)
+    override val largeOffsetX: Float = if (isLargeClock) -context.dpF(86f) else 0f
+    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(214f) else 0f
+
+    private val panelBackground = glassPanel(context, 20f)
 
     private val timeView =
         buildText(
             context = context,
-            sizePx = if (isLargeClock) context.dpF(118f) else context.dpF(34f),
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL),
-            letterSpacing = if (isLargeClock) -0.035f else -0.02f,
-        )
+            sizePx = if (isLargeClock) context.dpF(78f) else context.dpF(46f),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+            letterSpacing = -0.015f,
+        ).apply { gravity = Gravity.START }
 
-    override val root: View = rootFrame
+    private val dateView =
+        buildText(
+            context = context,
+            sizePx = if (isLargeClock) context.dpF(18f) else context.dpF(12f),
+            typeface = Typeface.create("sans-serif", Typeface.NORMAL),
+            letterSpacing = 0f,
+        ).apply {
+            gravity = Gravity.START
+            setPadding(0, context.dp(3), 0, 0)
+        }
 
     init {
-        if (isLargeClock) {
-            rootFrame.addView(
-                timeView,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-        } else {
-            chipBackground.shape = GradientDrawable.RECTANGLE
-            chipBackground.cornerRadius = context.dpF(16f)
+        val panel =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.START
+                setPadding(
+                    if (isLargeClock) context.dp(18) else context.dp(12),
+                    if (isLargeClock) context.dp(12) else context.dp(8),
+                    if (isLargeClock) context.dp(18) else context.dp(12),
+                    if (isLargeClock) context.dp(12) else context.dp(8),
+                )
+                background = panelBackground
+            }
 
-            val chip =
-                FrameLayout(context).apply {
-                    setPadding(context.dp(12), context.dp(6), context.dp(12), context.dp(6))
-                    background = chipBackground
-                }
+        panel.addView(timeView)
+        panel.addView(dateView)
 
-            chip.addView(
-                timeView,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-
-            rootFrame.addView(
-                chip,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-        }
+        root.addView(
+            panel,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.START,
+            ),
+        )
     }
 
     override fun render(hour: String, minute: String, full: String, contentDescription: String?) {
         timeView.text = full
+        dateView.text = nowDateLabel()
         root.contentDescription = contentDescription ?: full
         root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     override fun applyColor(color: Int) {
         timeView.setTextColor(color)
-        if (!isLargeClock) {
-            chipBackground.setColor(withAlpha(color, 0.17f))
-            chipBackground.setStroke(root.context.dp(1), withAlpha(color, 0.36f))
-        }
+        dateView.setTextColor(color)
+        panelBackground.setColor(withAlpha(color, 0.16f))
+        panelBackground.setStroke(context.dp(1), withAlpha(color, 0.30f))
     }
 
     override fun applyFontSize(fontSizePx: Float) {
-        val size =
+        val core =
             if (isLargeClock) {
-                (fontSizePx * 1.36f).coerceAtLeast(root.context.dpF(80f))
+                (fontSizePx * 1.06f).coerceAtLeast(context.dpF(56f))
             } else {
-                (fontSizePx * 0.78f).coerceAtLeast(root.context.dpF(24f))
+                (fontSizePx * 0.68f).coerceAtLeast(context.dpF(30f))
             }
-        timeView.setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
+        timeView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
+        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.22f)
     }
 }
 
-private class OneUI8StyleClockView(context: Context, private val isLargeClock: Boolean) : StyleClockView {
-    private val rootFrame = FrameLayout(context)
-    private val accentBackground = GradientDrawable()
+private class OneUI8StyleClockView(
+    private val context: Context,
+    private val isLargeClock: Boolean,
+) : StyleClockView {
+    override val root = FrameLayout(context)
+    override val largeOffsetX: Float = 0f
+    override val largeOffsetY: Float = if (isLargeClock) -context.dpF(178f) else 0f
 
-    private var hourView: TextView? = null
-    private var minuteView: TextView? = null
-    private var fullView: TextView? = null
+    private val timeView =
+        buildText(
+            context = context,
+            sizePx = if (isLargeClock) context.dpF(86f) else context.dpF(52f),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
+            letterSpacing = 0f,
+        ).apply { gravity = Gravity.CENTER_HORIZONTAL }
 
-    override val root: View = rootFrame
+    private val dateView =
+        buildText(
+            context = context,
+            sizePx = if (isLargeClock) context.dpF(20f) else context.dpF(13f),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+            letterSpacing = 0f,
+        ).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, context.dp(4), 0, 0)
+        }
 
     init {
-        if (isLargeClock) {
-            val row =
-                LinearLayout(context).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
-                }
-
-            hourView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(106f),
-                    typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
-                    letterSpacing = -0.035f,
-                )
-
-            val separator =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(80f),
-                    typeface = Typeface.create("sans-serif", Typeface.NORMAL),
-                    letterSpacing = -0.015f,
-                ).apply { text = ":" }
-
-            minuteView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(106f),
-                    typeface = Typeface.create("sans-serif", Typeface.NORMAL),
-                    letterSpacing = -0.02f,
-                )
-
-            row.addView(hourView)
-            row.addView(separator)
-            row.addView(minuteView)
-
-            rootFrame.addView(
-                row,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-        } else {
-            val container =
-                LinearLayout(context).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
-                    setPadding(context.dp(10), context.dp(6), context.dp(12), context.dp(6))
-                }
-
-            val accent =
-                View(context).apply {
-                    background = accentBackground
-                }
-            accentBackground.shape = GradientDrawable.RECTANGLE
-            accentBackground.cornerRadius = context.dpF(2f)
-
-            fullView =
-                buildText(
-                    context = context,
-                    sizePx = context.dpF(30f),
-                    typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
-                    letterSpacing = -0.02f,
-                )
-
-            val accentLp = LinearLayout.LayoutParams(context.dp(3), context.dp(24)).apply {
-                marginEnd = context.dp(8)
+        val container =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
             }
-            container.addView(accent, accentLp)
-            container.addView(fullView)
 
-            rootFrame.addView(
-                container,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER,
-                ),
-            )
-        }
+        container.addView(timeView)
+        container.addView(dateView)
+
+        root.addView(
+            container,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER_HORIZONTAL,
+            ),
+        )
     }
 
     override fun render(hour: String, minute: String, full: String, contentDescription: String?) {
-        if (isLargeClock) {
-            hourView?.text = hour
-            minuteView?.text = minute
-        } else {
-            fullView?.text = full
-        }
-
+        timeView.text = full
+        dateView.text = nowDateLabel()
         root.contentDescription = contentDescription ?: full
         root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     override fun applyColor(color: Int) {
-        hourView?.setTextColor(color)
-        minuteView?.setTextColor(color)
-        fullView?.setTextColor(color)
-
-        if (!isLargeClock) {
-            accentBackground.setColor(color)
-            (root as FrameLayout).background =
-                GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = root.context.dpF(16f)
-                    setColor(withAlpha(color, 0.17f))
-                }
-        }
+        timeView.setTextColor(color)
+        dateView.setTextColor(color)
     }
 
     override fun applyFontSize(fontSizePx: Float) {
-        if (isLargeClock) {
-            val hourSize = (fontSizePx * 1.30f).coerceAtLeast(root.context.dpF(74f))
-            val minuteSize = (fontSizePx * 1.20f).coerceAtLeast(root.context.dpF(70f))
-            hourView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, hourSize)
-            minuteView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, minuteSize)
-        } else {
-            val fullSize = (fontSizePx * 0.75f).coerceAtLeast(root.context.dpF(23f))
-            fullView?.setTextSize(TypedValue.COMPLEX_UNIT_PX, fullSize)
-        }
+        val core =
+            if (isLargeClock) {
+                (fontSizePx * 1.12f).coerceAtLeast(context.dpF(64f))
+            } else {
+                (fontSizePx * 0.74f).coerceAtLeast(context.dpF(34f))
+            }
+        timeView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core)
+        dateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, core * 0.24f)
     }
 }
 
@@ -379,13 +302,24 @@ private fun buildText(
     letterSpacing: Float,
 ): TextView {
     return TextView(context).apply {
-        gravity = Gravity.CENTER
         setSingleLine(true)
         setTextSize(TypedValue.COMPLEX_UNIT_PX, sizePx)
         this.typeface = typeface
         this.letterSpacing = letterSpacing
         includeFontPadding = false
+        setShadowLayer(context.dpF(1f), 0f, context.dpF(1f), Color.argb(70, 0, 0, 0))
     }
+}
+
+private fun glassPanel(context: Context, radiusDp: Float): GradientDrawable {
+    return GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = context.dpF(radiusDp)
+    }
+}
+
+private fun nowDateLabel(): String {
+    return DateFormat.format("EEE, MMM d", System.currentTimeMillis()).toString()
 }
 
 private fun Context.dp(value: Int): Int {

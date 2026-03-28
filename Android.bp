@@ -29,8 +29,6 @@ android_library {
         enabled: true,
         proguard_flags_files: ["proguard_custom.flags"],
         export_proguard_flags_files: true,
-        shrink_resources: true,
-        optimized_shrink_resources: true,
     },
 }
 
@@ -48,8 +46,6 @@ android_app {
     privileged: true,
     optimize: {
         enabled: true,
-        shrink_resources: true,
-        optimized_shrink_resources: true,
         proguard_flags_files: ["proguard_custom.flags"],
     },
 }

@@ -45,6 +45,8 @@ class CustomClockFaceController(
 ) : ClockFaceController {
 
     private val styleView = ClockStyleViewFactory.create(pluginCtx, style, isLargeClock)
+    private val baseOffsetX = if (isLargeClock) styleView.largeOffsetX else 0f
+    private val baseOffsetY = if (isLargeClock) styleView.largeOffsetY else 0f
     private var dozeFraction = 0f
 
     override val config = ClockFaceConfig()
@@ -58,6 +60,10 @@ class CustomClockFaceController(
                 else ClockViewIds.LOCKSCREEN_CLOCK_VIEW_SMALL
             visibility = View.VISIBLE
             alpha = 1f
+            if (isLargeClock) {
+                translationX = baseOffsetX
+                translationY = baseOffsetY
+            }
         }
 
     override val layout = DefaultClockFaceLayout(view)
@@ -105,7 +111,7 @@ class CustomClockFaceController(
             }
 
             override fun fold(fraction: Float) {
-                view.translationY = if (isLargeClock) 0f else 8f * fraction
+                view.translationY = if (isLargeClock) baseOffsetY else 8f * fraction
             }
 
             override fun charge() {
