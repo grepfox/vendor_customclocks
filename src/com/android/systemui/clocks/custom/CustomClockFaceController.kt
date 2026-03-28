@@ -58,6 +58,9 @@ class CustomClockFaceController(
             id =
                 if (isLargeClock) ClockViewIds.LOCKSCREEN_CLOCK_VIEW_LARGE
                 else ClockViewIds.LOCKSCREEN_CLOCK_VIEW_SMALL
+            setBackgroundColor(Color.TRANSPARENT)
+            clipToPadding = false
+            clipChildren = false
             visibility = View.VISIBLE
             alpha = 1f
             if (isLargeClock) {

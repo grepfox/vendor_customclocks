@@ -28,6 +28,10 @@ import com.android.systemui.plugins.keyguard.ui.clocks.ClockSettings
 class CustomClockProvider : ClockProviderPlugin {
     private lateinit var pluginCtx: Context
 
+    private fun resolveStyle(clockId: String?): ClockStyle {
+        return ClockStyle.fromId(clockId) ?: ClockStyle.OXYGENOS
+    }
+
     override fun onCreate(hostCtx: Context, pluginCtx: Context) {
         this.pluginCtx = pluginCtx
     }
@@ -37,9 +41,7 @@ class CustomClockProvider : ClockProviderPlugin {
     override fun getClocks() = ClockStyle.getMetadata()
 
     override fun createClock(ctx: Context, settings: ClockSettings): ClockController {
-        val style =
-            ClockStyle.fromId(settings.clockId)
-                ?: throw IllegalArgumentException("${settings.clockId} unsupported by this provider")
+        val style = resolveStyle(settings.clockId)
 
         return CustomClockController(
             hostCtx = ctx,
@@ -51,9 +53,7 @@ class CustomClockProvider : ClockProviderPlugin {
     }
 
     override fun getClockPickerConfig(settings: ClockSettings): ClockPickerConfig {
-        val style =
-            ClockStyle.fromId(settings.clockId)
-                ?: throw IllegalArgumentException("${settings.clockId} unsupported by this provider")
+        val style = resolveStyle(settings.clockId)
 
         val res = pluginCtx.resources
         return ClockPickerConfig(
