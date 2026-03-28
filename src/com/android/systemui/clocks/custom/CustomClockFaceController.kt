@@ -17,6 +17,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Rect
 import android.view.View
+import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import com.android.systemui.customization.clocks.DefaultClockFaceLayout
 import com.android.systemui.customization.clocks.DigitalTimeFormatter
@@ -59,8 +60,10 @@ class CustomClockFaceController(
                 if (isLargeClock) ClockViewIds.LOCKSCREEN_CLOCK_VIEW_LARGE
                 else ClockViewIds.LOCKSCREEN_CLOCK_VIEW_SMALL
             setBackgroundColor(Color.TRANSPARENT)
-            clipToPadding = false
-            clipChildren = false
+            (this as? ViewGroup)?.let {
+                it.clipToPadding = false
+                it.clipChildren = false
+            }
             visibility = View.VISIBLE
             alpha = 1f
             if (isLargeClock) {
