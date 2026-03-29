@@ -14,6 +14,7 @@
 package com.android.systemui.clocks.custom
 
 import android.content.Context
+import android.util.Log
 import com.android.internal.annotations.Keep
 import com.android.systemui.customization.clocks.TimeKeeperImpl
 import com.android.systemui.plugins.annotations.Requires
@@ -29,7 +30,11 @@ class CustomClockProvider : ClockProviderPlugin {
     private lateinit var pluginCtx: Context
 
     private fun resolveStyle(clockId: String?): ClockStyle {
-        return ClockStyle.fromId(clockId) ?: ClockStyle.OXYGENOS
+        return ClockStyle.fromAnyId(clockId)
+            ?: run {
+                Log.w(TAG, "Unknown clockId '$clockId', defaulting to ${ClockStyle.OXYGENOS.id}")
+                ClockStyle.OXYGENOS
+            }
     }
 
     override fun onCreate(hostCtx: Context, pluginCtx: Context) {
@@ -42,6 +47,7 @@ class CustomClockProvider : ClockProviderPlugin {
 
     override fun createClock(ctx: Context, settings: ClockSettings): ClockController {
         val style = resolveStyle(settings.clockId)
+        Log.d(TAG, "createClock request='${settings.clockId}' resolved='${style.id}'")
 
         return CustomClockController(
             hostCtx = ctx,
@@ -54,6 +60,7 @@ class CustomClockProvider : ClockProviderPlugin {
 
     override fun getClockPickerConfig(settings: ClockSettings): ClockPickerConfig {
         val style = resolveStyle(settings.clockId)
+        Log.d(TAG, "getClockPickerConfig request='${settings.clockId}' resolved='${style.id}'")
 
         val res = pluginCtx.resources
         return ClockPickerConfig(
@@ -62,5 +69,9 @@ class CustomClockProvider : ClockProviderPlugin {
             description = res.getString(style.descriptionRes),
             thumbnail = res.getDrawable(style.thumbnailRes, null),
         )
+    }
+
+    private companion object {
+        const val TAG = "CustomClockProvider"
     }
 }

@@ -16,6 +16,7 @@ package com.android.systemui.clocks.custom
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.android.systemui.plugins.keyguard.ui.clocks.ClockMetadata
+import java.util.Locale
 
 enum class ClockStyle(
     val id: String,
@@ -46,5 +47,22 @@ enum class ClockStyle(
         fun getMetadata(): List<ClockMetadata> = values().map { ClockMetadata(it.id) }
 
         fun fromId(clockId: String?): ClockStyle? = values().firstOrNull { it.id == clockId }
+
+        fun fromAnyId(clockId: String?): ClockStyle? {
+            val raw = clockId?.trim().orEmpty()
+            if (raw.isEmpty()) return null
+
+            fromId(raw)?.let { return it }
+
+            val normalized = raw.uppercase(Locale.US)
+            values().firstOrNull { normalized.contains(it.id.uppercase(Locale.US)) }?.let { return it }
+
+            return when {
+                normalized.contains("OXYGEN") -> OXYGENOS
+                normalized.contains("IOS") -> IOS26
+                normalized.contains("ONEUI") -> ONEUI8
+                else -> null
+            }
+        }
     }
 }
